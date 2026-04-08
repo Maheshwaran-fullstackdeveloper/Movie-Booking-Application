@@ -3,35 +3,33 @@ import mongoose from "mongoose";
 const bookingSchema = new mongoose.Schema(
   {
     user: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "User",
       required: true,
     },
-    movie: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Movie",
-      required: true,
-    },
     show: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "Show",
       required: true,
     },
-    seats: {
-      type: [String],
-      required: true,
-    },
-    totalPrice: {
+    amount: {
       type: Number,
       required: true,
     },
-    status: {
+    bookedSeats: {
+      type: Array,
+      required: true,
+    },
+    isPaid: {
+      type: Boolean,
+      default: false,
+    },
+    paymentLink: {
       type: String,
-      enum: ["pending", "success", "failed"],
-      default: "pending",
     },
   },
   { timestamps: true },
 );
+const Booking = mongoose.model("Booking", bookingSchema);
 
-export default mongoose.model("Booking", bookingSchema);
+export default Booking;
