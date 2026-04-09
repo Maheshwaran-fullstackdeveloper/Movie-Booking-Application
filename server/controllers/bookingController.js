@@ -1,4 +1,5 @@
 import Show from "../models/Show.js";
+import Booking from "../models/Booking.js";
 
 const checkSeatsAvailability = async (showId, selectedSeats) => {
   try {
@@ -36,7 +37,9 @@ export const createBooking = async (req, res) => {
     });
     showData.markModified("occupiedSeats");
     await showData.save();
-    res.status(201).json({ success: true, message: "Booked successfully" });
+    res
+      .status(201)
+      .json({ success: true, message: "Booked successfully", booking });
   } catch (error) {
     console.log(error.message);
     res.status(500).json({ success: false, message: error.message });

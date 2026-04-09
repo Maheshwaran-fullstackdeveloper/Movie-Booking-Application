@@ -5,7 +5,7 @@ import {
   getDashboardData,
   getAllShows,
   getAllBookings,
-} from "../controllers/adminController";
+} from "../controllers/adminController.js";
 
 const adminRouter = express.Router();
 
@@ -15,3 +15,4 @@ adminRouter.get("/all-shows", protectAdmin, getAllShows);
 adminRouter.get("/all-bookings", protectAdmin, getAllBookings);
 
 export default adminRouter;
+
