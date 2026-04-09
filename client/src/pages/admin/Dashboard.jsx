@@ -63,7 +63,7 @@ function Dashboard() {
         <BlurCircle top="-100px" left="0" />
         <div className="flex flex-wrap gap-4 w-full">
           {dashboardCards.map((card, index) => (
-            <div className="flex items-center justify-between px-4 py-3 bg-primary/10 border border-primary/20 rounded-md max-w-50 w-full">
+            <div key={index} className="flex items-center justify-between px-4 py-3 bg-primary/10 border border-primary/20 rounded-md max-w-50 w-full">
               <div>
                 <h1 className="text-sm">{card.title}</h1>
                 <p className="text-xl font-medium mt-1">{card.value}</p>

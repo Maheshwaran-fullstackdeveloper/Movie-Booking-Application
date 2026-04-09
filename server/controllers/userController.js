@@ -1,10 +1,10 @@
-import { clerkClient } from "@clerk/express";
+import { clerkClient, getAuth } from "@clerk/express";
 import Booking from "../models/Booking.js";
 import Movie from "../models/Movie.js";
 
 export const getUserBookings = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const { userId } = getAuth(req);
     const bookings = await Booking.find({ user: userId })
       .populate({
         path: "show",
@@ -23,7 +23,7 @@ export const getUserBookings = async (req, res) => {
 export const updateFavourite = async (req, res) => {
   try {
     const { movieId } = req.body;
-    const { userId } = req.auth();
+    const { userId } = getAuth(req);
     const user = await clerkClient.users.getUser(userId);
     if (!user.privateMetadata?.favourites) {
       user.privateMetadata.favourites = [];
@@ -49,7 +49,7 @@ export const updateFavourite = async (req, res) => {
 
 export const getFavourites = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const { userId } = getAuth(req);
     const user = await clerkClient.users.getUser(userId);
     const favourites = user.privateMetadata?.favourites || [];
     const movies = await Movie.find({ _id: { $in: favourites } });
@@ -59,3 +59,4 @@ export const getFavourites = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+

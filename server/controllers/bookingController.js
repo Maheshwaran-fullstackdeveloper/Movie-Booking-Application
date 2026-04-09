@@ -1,3 +1,4 @@
+import { getAuth } from "@clerk/express";
 import Show from "../models/Show.js";
 import Booking from "../models/Booking.js";
 
@@ -16,7 +17,7 @@ const checkSeatsAvailability = async (showId, selectedSeats) => {
 
 export const createBooking = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const { userId } = getAuth(req);
     const { showId, selectedSeats } = req.body;
     const { origin } = req.headers;
     const isAvailable = await checkSeatsAvailability(showId, selectedSeats);
@@ -57,3 +58,5 @@ export const getOccupiedSeats = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+
