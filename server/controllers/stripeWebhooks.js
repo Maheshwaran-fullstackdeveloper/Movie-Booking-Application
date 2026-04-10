@@ -1,5 +1,6 @@
 import stripe from "stripe";
 import Booking from "../models/Booking.js";
+import { inngest } from "../inngest/index.js";
 
 export const stripeWebhooks = async (req, res) => {
   console.log(">>> Webhook Handler: Start");
@@ -14,7 +15,7 @@ export const stripeWebhooks = async (req, res) => {
     console.log(">>> Body already present as Buffer/String");
     rawBody = req.body;
   } else if (req.body && typeof req.body === "object") {
-    // If it's an object, we must stringify it to verify. 
+    // If it's an object, we must stringify it to verify.
     // Note: This can fail verification if formatting differs from raw.
     console.log(">>> Body already present as Object");
     rawBody = JSON.stringify(req.body);
@@ -42,11 +43,7 @@ export const stripeWebhooks = async (req, res) => {
 
   let event;
   try {
-    event = stripeInstance.webhooks.constructEvent(
-      rawBody,
-      sig,
-      webhookSecret,
-    );
+    event = stripeInstance.webhooks.constructEvent(rawBody, sig, webhookSecret);
     console.log(">>> Event Verified:", event.type);
   } catch (err) {
     console.error(">>> Verification Failed:", err.message);
@@ -64,6 +61,14 @@ export const stripeWebhooks = async (req, res) => {
           isPaid: true,
           paymentLink: "",
         });
+
+        await inngest.send({
+          name: "app/show.booked",
+          data: {
+            bookingId,
+          },
+        });
+
         console.log(">>> DB Updated Successfully 🟢");
       }
     }

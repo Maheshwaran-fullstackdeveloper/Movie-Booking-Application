@@ -2,6 +2,7 @@ import { Inngest } from "inngest";
 import User from "../models/User.js";
 import Booking from "../models/Booking.js";
 import Show from "../models/Show.js";
+import sendEmail from "../configs/nodeMailer.js";
 
 // Create a client to send and receive events
 export const inngest = new Inngest({ id: "movie-ticket-booking" });
@@ -85,10 +86,67 @@ const releaseSeatsAndDeleteBooking = inngest.createFunction(
   },
 );
 
+const sendBookingConfirmationEmail = inngest.createFunction(
+  {
+    id: "send-booking-confirmation-email",
+    triggers: [{ event: "app/show.booked" }],
+  },
+  async ({ event }) => {
+    const { bookingId } = event.data;
+
+    const booking = await Booking.findById(bookingId)
+      .populate("movie")
+      .populate("user");
+
+    if (!booking) {
+      throw new Error("Booking not found");
+    }
+
+    const showDate = new Date(booking.show.showDateTime);
+
+    const formattedDate = showDate.toLocaleDateString("en-US", {
+      timeZone: "Asia/Kolkata",
+    });
+
+    const formattedTime = showDate.toLocaleTimeString("en-US", {
+      timeZone: "Asia/Kolkata",
+    });
+
+    await sendEmail({
+      to: booking.user.email,
+      subject: `Payment Confirmation - ${booking.movie.title} booked successfully`,
+      html: `
+        <div style="font-family: Arial, sans-serif; line-height: 1.5;">
+          <p>Hi ${booking.user.name},</p>
+
+          <p>
+            Your booking for 
+            <strong style="color: #F84565;">${booking.movie.title}</strong> 
+            is confirmed.
+          </p>
+
+          <p>
+            <strong>Date:</strong> ${formattedDate} <br/>
+            <strong>Time:</strong> ${formattedTime}
+          </p>
+
+          <p>Enjoy the show! 🎬</p>
+
+          <p>
+            Thanks for booking with us!<br/>
+            <strong>QuickShow Team</strong>
+          </p>
+        </div>
+      `,
+    });
+  },
+);
+
 // Create an empty array where we'll export future Inngest functions
 export const functions = [
   syncUserCreation,
   syncUserDeletion,
   syncUserUpdation,
   releaseSeatsAndDeleteBooking,
+  sendBookingConfirmationEmail,
 ];
