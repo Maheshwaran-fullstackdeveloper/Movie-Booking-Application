@@ -13,32 +13,28 @@ import { stripeWebhooks } from "./controllers/stripeWebhooks.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-await connectDB();
 
-app.use(
-  "/api/stripe",
-  express.raw({ type: "application/json" }),
-  stripeWebhooks,
-);
+// Connect to Database (Non-blocking for Vercel startup)
+connectDB();
 
+// Stripe Webhook MUST be registered before any body parsers or clerk middleware
+app.post("/api/stripe", stripeWebhooks);
+
+// Standard Middlewares
 app.use(express.json());
-
 app.use(clerkMiddleware());
-
 app.use(cors());
 
+// Health Check
 app.get("/", (req, res) => {
   res.send("Server is running!");
 });
 
+// Routes
 app.use("/api/inngest", serve({ client: inngest, functions }));
-
 app.use("/api/show", showRouter);
-
 app.use("/api/booking", bookingRouter);
-
 app.use("/api/admin", adminRouter);
-
 app.use("/api/user", userRouter);
 
 app.listen(PORT, () => {

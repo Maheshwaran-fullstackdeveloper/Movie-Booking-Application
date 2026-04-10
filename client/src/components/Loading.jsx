@@ -6,14 +6,16 @@ function Loading() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (nextUrl) {
-      setTimeout(() => {
-        navigate("/" + nextUrl);
-      }, 8000);
-    } else {
-      navigate("/");
+    if (window.location.pathname.startsWith("/loading")) {
+      if (nextUrl) {
+        setTimeout(() => {
+          navigate("/" + nextUrl);
+        }, 8000);
+      } else {
+        navigate("/");
+      }
     }
-  }, [nextUrl]);
+  }, [nextUrl, navigate]);
 
   return (
     <div className="flex items-center justify-center h-[80vh]">

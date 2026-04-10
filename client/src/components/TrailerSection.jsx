@@ -14,8 +14,16 @@ function TrailerSection() {
       <div className="relative mt-6">
         <BlurCircle top="-100px" right="-100px" />
         <ReactPlayer
-          src={currentTrailer.videoUrl}
+          url={currentTrailer.videoUrl}
           controls={false}
+          config={{
+            youtube: {
+              playerVars: {
+                origin: window.location.origin,
+                enablejsapi: 1,
+              },
+            },
+          }}
           className="mx-auto max-w-full"
           width="960px"
           height="540px"
