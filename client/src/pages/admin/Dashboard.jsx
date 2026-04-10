@@ -11,9 +11,11 @@ import Loading from "../../components/Loading";
 import Title from "../../components/admin/Title";
 import BlurCircle from "../../components/BlurCircle";
 import { dateFormat } from "../../lib/dateFormat";
+import { useAppContext } from "../../context/AppContext";
 
 function Dashboard() {
   const currency = import.meta.env.VITE_CURRENCY;
+  const { axios, getToken, user, image_base_url } = useAppContext();
 
   const [dashboardData, setDashboardData] = useState({
     totalBookings: 0,
@@ -48,13 +50,28 @@ function Dashboard() {
   ];
 
   const fetchDashboardData = async () => {
-    setDashboardData(dummyDashboardData);
-    setLoading(false);
+    try {
+      const { data } = await axios.get("/api/admin/dashboard", {
+        headers: { Authorization: `Bearer ${await getToken()}` },
+      });
+      if (data.success) {
+        setDashboardData(data.dashboardData);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("An error occured. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    if (user) {
+      fetchDashboardData();
+    }
+  }, [user]);
 
   return !loading ? (
     <>
@@ -63,7 +80,10 @@ function Dashboard() {
         <BlurCircle top="-100px" left="0" />
         <div className="flex flex-wrap gap-4 w-full">
           {dashboardCards.map((card, index) => (
-            <div key={index} className="flex items-center justify-between px-4 py-3 bg-primary/10 border border-primary/20 rounded-md max-w-50 w-full">
+            <div
+              key={index}
+              className="flex items-center justify-between px-4 py-3 bg-primary/10 border border-primary/20 rounded-md max-w-50 w-full"
+            >
               <div>
                 <h1 className="text-sm">{card.title}</h1>
                 <p className="text-xl font-medium mt-1">{card.value}</p>
@@ -82,7 +102,7 @@ function Dashboard() {
             className="w-55 rounded-lg overflow-hidden h-full pb-3 bg-primary/10 border border-primary/20 hover:-translate-y-1 transition duration-300"
           >
             <img
-              src={show.movie.poster_path}
+              src={image_base_url + show.movie.poster_path}
               alt="poster"
               className="w-full h-60 object-cover"
             />

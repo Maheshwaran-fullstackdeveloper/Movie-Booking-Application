@@ -10,7 +10,7 @@ export const getDashboardData = async (req, res) => {
   try {
     const bookings = await Booking.find({ isPaid: true });
     const activeShows = await Show.find({
-      showDateTime: { $gte: new Date() },
+      showDateTime: { $gte: new Date(new Date().setHours(0, 0, 0, 0)) },
     }).populate("movie");
     const totalUser = await User.countDocuments();
     const dashboardData = {
@@ -31,7 +31,9 @@ export const getDashboardData = async (req, res) => {
 
 export const getAllShows = async (req, res) => {
   try {
-    const shows = await Show.find({ showDateTime: { $gte: new Date() } })
+    const shows = await Show.find({ 
+      showDateTime: { $gte: new Date(new Date().setHours(0, 0, 0, 0)) } 
+    })
       .populate("movie")
       .sort({ showDateTime: 1 });
     res.status(200).json({ success: true, shows });

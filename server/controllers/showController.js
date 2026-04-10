@@ -88,13 +88,22 @@ export const addShow = async (req, res) => {
 export const getShows = async (req, res) => {
   try {
     const shows = await Show.find({
-      showDateTime: { $gte: new Date() },
+      showDateTime: { $gte: new Date(new Date().setHours(0, 0, 0, 0)) },
     })
       .populate("movie")
       .sort({ showDateTime: 1 });
-    const uniqueShows = new Set(shows.map((show) => show.movie));
 
-    res.status(200).json({ success: true, shows: Array.from(uniqueShows) });
+    const movieMap = new Map();
+    shows.forEach((show) => {
+      if (show.movie) {
+        movieMap.set(show.movie._id.toString(), show.movie);
+      }
+    });
+
+    res.status(200).json({ 
+      success: true, 
+      shows: Array.from(movieMap.values()) 
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: error.message });
@@ -110,7 +119,7 @@ export const getShow = async (req, res) => {
 
     const shows = await Show.find({
       movie: String(movieId),
-      showDateTime: { $gte: new Date() },
+      showDateTime: { $gte: new Date(new Date().setHours(0, 0, 0, 0)) },
     });
 
     const dateTime = {};

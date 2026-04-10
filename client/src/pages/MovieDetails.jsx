@@ -1,24 +1,64 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { dummyDateTimeData, dummyShowsData } from "../assets/assets";
 import BlurCircle from "../components/BlurCircle";
 import { Heart, PlayCircleIcon, StarIcon } from "lucide-react";
 import timeFormat from "../lib/timeFormat";
 import DateSelect from "../components/DateSelect";
 import MovieCard from "./../components/MovieCard.jsx";
 import Loading from "../components/Loading.jsx";
+import { useAppContext } from "../context/AppContext";
+import toast from "react-hot-toast";
+
 function MovieDetails() {
   const navigate = useNavigate();
   const { id } = useParams();
   const [show, setShow] = useState(null);
+  const {
+    shows,
+    axios,
+    getToken,
+    user,
+    fetchFavouriteMovies,
+    favouriteMovies,
+    image_base_url,
+  } = useAppContext();
 
   const getShow = async () => {
-    const movie = dummyShowsData.find((item) => item._id === id);
-    if (movie) {
-      setShow({
-        ...movie,
-        dateTime: dummyDateTimeData,
-      });
+    try {
+      const { data } = await axios.get(`/api/show/${id}`);
+      if (data.success) {
+        setShow({
+          ...data.movie,
+          dateTime: data.dateTime,
+        });
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const handleFavourite = async () => {
+    try {
+      if (!user) return toast.error("Please login to add to favourites");
+
+      const { data } = await axios.post(
+        `/api/user/update-favourite`,
+        {
+          movieId: id,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${await getToken()}`,
+          },
+        },
+      );
+      if (data.success) {
+        await fetchFavouriteMovies();
+        toast.success(data.message);
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response.data.message);
     }
   };
 
@@ -30,7 +70,7 @@ function MovieDetails() {
     <div className="px-6 md:px-16 lg:px-40 pt-30 md:pt-50">
       <div className="flex flex-col md:flex-row gap-8 max-w-6xl mx-auto">
         <img
-          src={show.poster_path}
+          src={image_base_url + show.poster_path}
           alt="Movie poster"
           className="max-md:mx-auto rounded-xl h-104 max-w-70 object-cover"
         />
@@ -64,8 +104,13 @@ function MovieDetails() {
             >
               Buy Tickets
             </a>
-            <button className="bg-gray-700 p-2.5 rounded-full transition cursor-pointer active:scale-95">
-              <Heart className={`w-5 h-5`} />
+            <button
+              onClick={handleFavourite}
+              className="bg-gray-700 p-2.5 rounded-full transition cursor-pointer active:scale-95"
+            >
+              <Heart
+                className={`w-5 h-5 ${favouriteMovies.find((movie) => movie._id === id) ? "fill-primary text-primary" : ""}`}
+              />
             </button>
           </div>
         </div>
@@ -76,7 +121,7 @@ function MovieDetails() {
           {(show.casts || []).slice(0, 12).map((cast, index) => (
             <div key={index} className="flex flex-col items-center text-center">
               <img
-                src={cast.profile_path}
+                src={image_base_url + cast.profile_path}
                 alt="Cast"
                 className="rounded-full h-20 md:h-20 aspect-square object-cover"
               />
@@ -88,7 +133,7 @@ function MovieDetails() {
       <DateSelect dateTime={show.dateTime} id={id} />
       <p className="text-lg font-medium mt-20 mb-8">You may also like</p>
       <div className="flex flex-wrap max-sm:justify-center gap-8">
-        {dummyShowsData.slice(0, 4).map((movie, index) => (
+        {shows.slice(0, 4).map((movie, index) => (
           <MovieCard movie={movie} key={index} />
         ))}
       </div>

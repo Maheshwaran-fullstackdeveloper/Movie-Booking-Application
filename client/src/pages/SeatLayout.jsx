@@ -6,12 +6,14 @@ import { ArrowRightIcon, ClockIcon } from "lucide-react";
 import isoTimeFormat from "../lib/isoTimeFormat";
 import BlurCircle from "../components/BlurCircle";
 import toast from "react-hot-toast";
+import { useAppContext } from "../context/AppContext";
 
 function SeatLayout() {
   const { id, date } = useParams();
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [selectedTime, setSelectedTime] = useState(null);
   const [show, setShow] = useState(null);
+  const [occupiedSeats, setOccupiedSeats] = useState([]);
   const navigate = useNavigate();
   const groupRows = [
     ["A", "B"],
@@ -20,14 +22,16 @@ function SeatLayout() {
     ["G", "H"],
     ["I", "J"],
   ];
+  const { axios, getToken, user } = useAppContext();
 
   const getShow = async () => {
-    const show = dummyShowsData.find((show) => show._id === id);
-    if (show) {
-      setShow({
-        ...show,
-        dateTime: dummyDateTimeData,
-      });
+    try {
+      const { data } = await axios.get(`/api/show/${id}`);
+      if (data.success) {
+        setShow(data);
+      }
+    } catch (error) {
+      toast.error(error.response.data.message);
     }
   };
 
@@ -35,6 +39,8 @@ function SeatLayout() {
     if (!selectedTime) return toast.error("Please select a time first");
     if (!selectedSeats.includes(seatId) && selectedSeats.length > 4)
       return toast.error("You can select maximum 5 seats");
+    if (occupiedSeats.includes(seatId))
+      return toast.error("Seat is already booked");
     setSelectedSeats((prev) =>
       prev.includes(seatId)
         ? prev.filter((seat) => seat !== seatId)
@@ -53,8 +59,8 @@ function SeatLayout() {
                 key={seatId}
                 onClick={() => handleSeatClick(seatId)}
                 className={`h-8 w-8 rounded border border-primary/60 cursor-pointer ${
-                  selectedSeats.includes(seatId) ? "bg-primary text-white" : ""
-                }`}
+                  selectedSeats.includes(seatId) && "bg-primary text-white"
+                } ${occupiedSeats.includes(seatId) && "opacity-50"}`}
               >
                 {seatId}
               </button>
@@ -65,9 +71,59 @@ function SeatLayout() {
     );
   };
 
+  const getOccupiedSeats = async () => {
+    try {
+      const { data } = await axios.get(
+        `/api/booking/seats/${selectedTime.showId}`,
+      );
+      if (data.success) {
+        setOccupiedSeats(data.occupiedSeats);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.response.data.message);
+    }
+  };
+
+  const bookTickets = async () => {
+    try {
+      if (!user) return toast.error("Please login to book tickets");
+      if (!selectedTime) return toast.error("Please select a time");
+      if (selectedSeats.length === 0) return toast.error("Please select seats");
+      const { data } = await axios.post(
+        `/api/booking/create`,
+        {
+          showId: selectedTime.showId,
+          selectedSeats,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${await getToken()}`,
+          },
+        },
+      );
+      if (data.success) {
+        toast.success(data.message);
+        navigate("/my-bookings");
+        scrollTo(0, 0);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
   useEffect(() => {
     getShow();
   }, []);
+
+  useEffect(() => {
+    if (selectedTime) {
+      getOccupiedSeats();
+    }
+  }, [selectedTime]);
 
   return show ? (
     <div className="flex flex-col md:flex-row px-6 md:px-16 lg:px-40 py-30 md:pt-50">
@@ -109,7 +165,7 @@ function SeatLayout() {
         </div>
         {selectedSeats.length > 0 && (
           <button
-            onClick={() => navigate("/my-bookings")}
+            onClick={bookTickets}
             className="flex items-center gap-1 mt-20 px-10 py-3 text-sm bg-primary hover:bg-primary-dull transition rounded-full font-medium cursor-pointer active:scale-95"
           >
             Proceed to Checkout
