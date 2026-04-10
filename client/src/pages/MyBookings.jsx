@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
-import { dummyBookingData } from "../assets/assets";
 import Loading from "../components/Loading";
 import BlurCircle from "../components/BlurCircle";
 import timeFormat from "../lib/timeFormat";
 import { dateFormat } from "../lib/dateFormat";
 import { useAppContext } from "../context/AppContext";
 import toast from "react-hot-toast";
-import { Link } from "react-router-dom";
 
 function MyBookings() {
   const currency = import.meta.env.VITE_CURRENCY;
@@ -53,6 +51,7 @@ function MyBookings() {
   };
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     if (user) {
       getMyBookings();
     }
