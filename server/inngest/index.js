@@ -95,7 +95,12 @@ const sendBookingConfirmationEmail = inngest.createFunction(
     const { bookingId } = event.data;
 
     const booking = await Booking.findById(bookingId)
-      .populate("movie")
+      .populate({
+        path: "show",
+        populate: {
+          path: "movie",
+        },
+      })
       .populate("user");
 
     if (!booking) {
@@ -114,14 +119,16 @@ const sendBookingConfirmationEmail = inngest.createFunction(
 
     await sendEmail({
       to: booking.user.email,
-      subject: `Payment Confirmation - ${booking.movie.title} booked successfully`,
+      subject: `Payment Confirmation - ${booking.show.movie.title} booked successfully`,
       html: `
         <div style="font-family: Arial, sans-serif; line-height: 1.5;">
           <p>Hi ${booking.user.name},</p>
 
           <p>
             Your booking for 
-            <strong style="color: #F84565;">${booking.movie.title}</strong> 
+            <strong style="color: #F84565;">${
+              booking.show.movie.title
+            }</strong> 
             is confirmed.
           </p>
 
