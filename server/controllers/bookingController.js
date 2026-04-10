@@ -1,6 +1,7 @@
 import { getAuth } from "@clerk/express";
 import Show from "../models/Show.js";
 import Booking from "../models/Booking.js";
+import Stripe from "stripe";
 
 const checkSeatsAvailability = async (showId, selectedSeats) => {
   try {
@@ -38,9 +39,37 @@ export const createBooking = async (req, res) => {
     });
     showData.markModified("occupiedSeats");
     await showData.save();
-    res
-      .status(201)
-      .json({ success: true, message: "Booked successfully", booking });
+    // Stripe Payment
+    const stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY);
+    const line_items = [
+      {
+        price_data: {
+          currency: "usd",
+          product_data: {
+            name: showData.movie.title,
+          },
+          unit_amount: booking.amount * 100,
+        },
+        quantity: 1,
+      },
+    ];
+    const session = await stripeInstance.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items,
+      mode: "payment",
+      success_url: `${origin}/loading/my-bookings`,
+      cancel_url: `${origin}/my-bookings`,
+      metadata: {
+        bookingId: booking._id.toString(),
+      },
+      expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
+    });
+    booking.paymentLink = session.url;
+    await booking.save();
+    res.status(201).json({
+      success: true,
+      url: session.url,
+    });
   } catch (error) {
     console.log(error.message);
     res.status(500).json({ success: false, message: error.message });
@@ -58,5 +87,3 @@ export const getOccupiedSeats = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
-
