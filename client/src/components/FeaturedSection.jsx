@@ -3,10 +3,16 @@ import { useNavigate } from "react-router-dom";
 import BlurCircle from "./BlurCircle";
 import MovieCard from "./MovieCard";
 import { useAppContext } from "../context/AppContext";
+import Loading from "./Loading";
 
 function FeaturedSection() {
   const navigate = useNavigate();
-  const { shows } = useAppContext();
+  const { shows, showsLoading } = useAppContext();
+
+  if (showsLoading) {
+    return <Loading />;
+  }
+
   return (
     <div className="px-6 md:px-16 lg:px-24 xl:px-44 overflow-hidden">
       <div className="relative flex items-center justify-between pt-20 pb-10">

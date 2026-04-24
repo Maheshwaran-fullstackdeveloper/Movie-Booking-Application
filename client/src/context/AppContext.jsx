@@ -12,6 +12,7 @@ export const AppContext = createContext();
 export const AppProvider = ({ children }) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [shows, setShows] = useState([]);
+  const [showsLoading, setShowsLoading] = useState(true);
   const [favouriteMovies, setFavouriteMovies] = useState([]);
 
   const image_base_url = import.meta.env.VITE_TMDB_IMAGE_BASE_URL;
@@ -48,15 +49,20 @@ export const AppProvider = ({ children }) => {
   };
 
   const fetchShows = async () => {
+    setShowsLoading(true);
     try {
       const { data } = await axios.get("/api/show/all");
       if (data.success) {
         setShows(data.shows);
       } else {
+        setShows([]);
         toast.error("Failed to fetch shows.");
       }
     } catch (error) {
+      setShows([]);
       console.error("Error fetching shows:", error);
+    } finally {
+      setShowsLoading(false);
     }
   };
 
@@ -98,6 +104,7 @@ export const AppProvider = ({ children }) => {
         navigate,
         isAdmin,
         shows,
+        showsLoading,
         favouriteMovies,
         fetchFavouriteMovies,
         image_base_url,

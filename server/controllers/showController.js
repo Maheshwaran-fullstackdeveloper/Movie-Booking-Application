@@ -87,22 +87,30 @@ export const addShow = async (req, res) => {
 //Get all shows from the database
 export const getShows = async (req, res) => {
   try {
-    const shows = await Show.find({
+    const upcomingShows = await Show.find({
       showDateTime: { $gte: new Date(new Date().setHours(0, 0, 0, 0)) },
     })
       .populate("movie")
       .sort({ showDateTime: 1 });
 
     const movieMap = new Map();
-    shows.forEach((show) => {
+    upcomingShows.forEach((show) => {
       if (show.movie) {
         movieMap.set(show.movie._id.toString(), show.movie);
       }
     });
 
+    let movies = Array.from(movieMap.values());
+
+    // Fall back to stored movies so the client can still render titles even if
+    // no future showtimes currently match the upcoming-shows filter.
+    if (movies.length === 0) {
+      movies = await Movie.find().sort({ createdAt: -1 });
+    }
+
     res.status(200).json({ 
       success: true, 
-      shows: Array.from(movieMap.values()) 
+      shows: movies,
     });
   } catch (error) {
     console.error(error);
